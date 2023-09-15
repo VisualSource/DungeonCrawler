@@ -4,15 +4,8 @@ public class Game {
     private Renderer renderer = new Renderer("Dungeon crawler");
     private Player player = new Player(1,6);
 
-    private World world = new World(DateTime.Now.Ticks);
-    public Game(){
-        
-
-        world.GenearteWorld();
-        world.GenearteLevelName();
-
-
-    }
+    private World world = new World();
+    public Game(){}
 
     private void RenderHeader(){
         renderer.WriteBuffer(String.Format("Name: {0}",player.Name),1,1); 
@@ -22,15 +15,19 @@ public class Game {
     }
 
     public void Run(){
+        var level = world.GenearteWorld();
+        world.GenearteLevelName();
 
-        RenderHeader();
-        
-        int line = 5;
-        foreach(var item in world.Level){
-            renderer.WriteBuffer(item,1,line);
-            line += 1;
+        for (int y = 5; y < 22; y++)
+        {
+            for (int x = 1; x < 50; x++)
+            {
+                renderer.WriteAt(level[x + 50 * y],x,y);
+            }
         }
 
+        RenderHeader();
+    
         while (true)
         {
             if(renderer.IsDirty) {

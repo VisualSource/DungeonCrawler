@@ -1,3 +1,5 @@
+using Dungeon.Geneartion;
+
 namespace Dungeon.Core;
 public class Renderer {
     private List<List<char>> buffer = new List<List<char>> { };
@@ -21,6 +23,16 @@ public class Renderer {
             }
             buffer.Add(row);
         }
+    }
+
+    public void WriteAt(Tile content, int left, int top){
+        Console.SetCursorPosition(left,top);
+        Console.Write(content);
+    }
+
+    public void WriteAt(char content, int left, int top){
+        Console.SetCursorPosition(left,top);
+        Console.Write(content);
     }
 
     public void WriteAt(string content, int left, int top) {
