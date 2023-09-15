@@ -1,0 +1,74 @@
+[
+  {
+    "Id": 0,
+    "Name": "NoConections",
+    "Connections": 0,
+    "Layout": ["@@@@@@@@@@", "@@@@@@@@@@", "@@@@@@@@@@"]
+  },
+  {
+    "Id": 1,
+    "Name": "DeadEndRight",
+    "Connections": 1,
+    "Layout": ["@@@@@@@@@@", "         @", "@@@@@@@@@@"]
+  },
+  {
+    "Id": 2,
+    "Name": "DeadEndLeft",
+    "Connections": 2,
+    "Layout": ["@@@@@@@@@@", "@         ", "@@@@@@@@@@"]
+  },
+  {
+    "Id": 3,
+    "Name": "DeadEndUp",
+    "Connections": 3,
+    "Layout": ["@@@@@@@@@@", "@        @", "@        @"]
+  },
+  {
+    "Id": 4,
+    "Name": "DeadEndDown",
+    "Connections": 4,
+    "Layout": ["@        @", "@        @", "@@@@@@@@@@"]
+  },
+  {
+    "Id": 5,
+    "Name": "Hall",
+    "Connections": 5,
+    "Layout": ["@@@@@@@@@@", "          ", "@@@@@@@@@@"]
+  },
+  {
+    "Id": 6,
+    "Name": "HalVertical",
+    "Connections": 6,
+    "Layout": ["@        @", "@        @", "@        @"]
+  },
+  {
+    "Id": 7,
+    "Name": "Middle",
+    "Connections": 7,
+    "Layout": ["@        @", "          ", "@        @"]
+  },
+  {
+    "Id": 8,
+    "Name": "RightDown",
+    "Connections": 8,
+    "Layout": ["@@@@@@@@@@", "@         ", "@        @"]
+  },
+  {
+    "Id": 9,
+    "Name": "RightUp",
+    "Connections": 9,
+    "Layout": ["@        @", "@         ", "@@@@@@@@@@"]
+  },
+  {
+    "Id": 10,
+    "Name": "LeftDown",
+    "Connections": 10,
+    "Layout": ["@@@@@@@@@@", "         @", "@        @"]
+  },
+  {
+    "Id": 11,
+    "Name": "LeftUp",
+    "Connections": 11,
+    "Layout": ["@        @", "         @", "@@@@@@@@@@"]
+  }
+]

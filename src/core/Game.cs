@@ -4,7 +4,7 @@ public class Game {
     private Renderer renderer = new Renderer("Dungeon crawler");
     private Player player = new Player(1,6);
 
-    private World world = new World();
+    private World world = new World(DateTime.Now.Ticks);
     public Game(){
         
 

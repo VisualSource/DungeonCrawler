@@ -42,6 +42,9 @@ public class Renderer {
     /// <param name="left"></param>
     /// <param name="top"></param>
     public void WriteBuffer(string content, int left , int top){
+        if(content.Length > 52) throw new Exception($"Content length is larger then viewport. Length({content.Length})");
+
+
         for (int i = 0; i < content.Length; i++)
         {
             buffer[top][left + i] = content[i];
