@@ -18,11 +18,11 @@ public class Game {
         var level = world.GenearteWorld();
         world.GenearteLevelName();
 
-        for (int y = 5; y < 22; y++)
+        for (int y = 0; y < 18; y++)
         {
-            for (int x = 1; x < 50; x++)
+            for (int x = 0; x < 48; x++)
             {
-                renderer.WriteAt(level[x + 50 * y],x,y);
+                renderer.WriteBuffer(level[(x + 20) + 50 * (y + 20)],x + 1,y + 6);
             }
         }
 
@@ -61,8 +61,8 @@ public class Game {
             }
 
             if(player.StatsAreDirty){
-                renderer.WriteAt(player.Health.ToString(),9,2);
-                renderer.WriteAt(player.Gold.ToString(),23,1);
+                renderer.Write(player.Health.ToString(),9,2);
+                renderer.Write(player.Gold.ToString(),23,1);
                 player.StatsAreDirty = false;
             }
         }

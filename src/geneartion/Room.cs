@@ -1,8 +1,28 @@
+using Dungeon.Utils;
 namespace Dungeon.Geneartion;
 
 public class Room {
     public required string Id { get; set; }
     public required string[] Layout { get; set; }
+
+
+    public IEnumerable<Vector2> GetPoints(int originX, int originY){
+        int width = GetWidth();
+        int height = GetHeight();
+
+        int centerX = width / 2;
+        int centerY = height / 2;
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                yield return new Vector2(originX + x - centerX , originY + y - centerY);
+            }
+        }
+
+        yield break;
+    }
 
     public Tile GetCellAt(int x, int y){
         return (Tile)Layout[y][x];

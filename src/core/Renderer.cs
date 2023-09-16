@@ -25,17 +25,17 @@ public class Renderer {
         }
     }
 
-    public void WriteAt(Tile content, int left, int top){
+    public void Write(Tile content, int left, int top){
         Console.SetCursorPosition(left,top);
         Console.Write(content);
     }
 
-    public void WriteAt(char content, int left, int top){
+    public void Write(char content, int left, int top){
         Console.SetCursorPosition(left,top);
         Console.Write(content);
     }
 
-    public void WriteAt(string content, int left, int top) {
+    public void Write(string content, int left, int top) {
         Console.SetCursorPosition(left,top);
         Console.Write(content);
     }
@@ -47,6 +47,14 @@ public class Renderer {
         Console.Write("DEBUG: {0}",content);
     }
 
+    public void WriteBuffer(Tile content, int left, int top){
+        buffer[top][left] = (char)content;
+        IsDirty = true;
+    }
+    public void WriteBuffer(char content, int left, int top){
+        buffer[top][left] = content;
+        IsDirty = true;
+    }
     /// <summary>
     ///     Write a string to the buffer. is not erased on render.
     /// </summary>
