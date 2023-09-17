@@ -1,3 +1,4 @@
+using System.Reflection.Emit;
 using Dungeon.Utils;
 namespace Dungeon.Geneartion;
 
@@ -5,22 +6,69 @@ public class Room {
     public required string Id { get; set; }
     public required string[] Layout { get; set; }
 
+    public Vector2[] GetStartingOffset(Direction d){
+        Vector2[] ranges = new Vector2[]{}; 
+        int width = GetWidth();
+        int height = GetHeight();
+
+        switch (d)
+        {
+            case Direction.North:
+                break;
+            case Direction.South:
+                break;
+            case Direction.East: {
+                
+                Vector2? currentRange = null;
+                for (int y = 0; y < height; y++)
+                {
+                    if(GetCellAt(width - 1,y) == Tile.Wall && GetCellAt(width - 2,y) == Tile.Floor){
+                        if(currentRange is null){
+                            currentRange = new Vector2(y,-1);
+                        }
+                        continue;
+                    } 
+
+                    if(currentRange is null) continue;
+                    currentRange.Y = y - 1;
+                    ranges.Append(currentRange);
+                    currentRange = null;
+                }
+
+                if(currentRange is not null && currentRange.Y == -1){
+                    currentRange.Y = height - 1;
+                }
+            }
+                break;
+            case Direction.West:
+                break;
+            default:
+                throw new IndexOutOfRangeException();
+        }
+
+
+
+
+        return ranges;
+    }
+
+    
     public IEnumerable<Vector2> GetPoints(int originX, int originY, Direction d){
         int width = GetWidth();
         int height = GetHeight();
 
-        int offsetX = 0;
-        int offsetY = 0;
+        int offsetX;
+        int offsetY;
 
         switch (d)
         {
             case Direction.North: {
                 offsetX = originX - (width / 2) ;
-                offsetY = originY - height - 1;
+                offsetY = originY - height;
                 break;
             }
             case Direction.West: {
-                offsetX = originX - width - 1;
+                offsetX = originX - width;
                 offsetY = originY - (height / 2);
                 break;
             }
@@ -39,6 +87,7 @@ public class Room {
                 offsetY = originY;
                 break;
         }
+
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
@@ -49,25 +98,6 @@ public class Room {
 
         yield break;
     }
-
-    public Vector2 GetTopLeft(int orginX, int originY){
-        int width = GetWidth();
-        int height = GetHeight();
-
-        int centerX = width / 2;
-        int centerY = height / 2;
-        return new Vector2(orginX - centerX,originY - centerY);
-    }
-
-    public Vector2 GetBottomRight(int originX, int originY){
-        int width = GetWidth();
-        int height = GetHeight();
-
-        int centerX = width / 2;
-        int centerY = height / 2;
-        return new Vector2(originX + width - centerX,originY + height - centerY);
-    }
-
     public Tile GetCellAt(int x, int y){
         return (Tile)Layout[y][x];
     }
