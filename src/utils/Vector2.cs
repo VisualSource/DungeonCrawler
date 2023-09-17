@@ -18,6 +18,6 @@ public class Vector2: IFormattable, IEquatable<Vector2> {
     }
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
-        return $"<Vector X=${X} Y={Y}/>";
+        return $"<Vector X={X} Y={Y}/>";
     }
 }

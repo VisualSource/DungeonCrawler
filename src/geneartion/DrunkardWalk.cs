@@ -1,13 +1,15 @@
+using System.Collections.Immutable;
+using System.Reflection.Metadata;
+using System.Text.Json;
 using Dungeon.Utils;
 namespace Dungeon.Geneartion;
 
-/// <summary>
-///     https://www.roguebasin.com/index.php?title=Dungeon-Building_Algorithm
-/// </summary>
-public class DrunkardWalk {
+/*public class DrunkardWalk {
     const int ChangeForRoom = 75;
     const int ChangeForSpeialRoom = 10;
     private Random rnd;
+
+    private readonly Action<string> logger;
     private Tile[] map = {};
 
     private int features = 10;
@@ -24,11 +26,12 @@ public class DrunkardWalk {
             get;
             private set;
     }
-    public DrunkardWalk(Room[] rooms, Room[] startingRooms, Room[] specialRooms, int? seed) {
+    public DrunkardWalk(Room[] rooms, Room[] startingRooms, Room[] specialRooms, Action<string> logger, int? seed) {
         rnd = seed is null ? new Random() : new Random((int)seed);
         NormalRooms = rooms;
         StartingRooms = startingRooms;
         SpecialRooms = specialRooms;
+        this.logger = logger;
     }
 
     public static int GetFeatureLowerBound(int c, int len){
@@ -228,7 +231,7 @@ public class DrunkardWalk {
 
         var points = room.GetPoints(x,y);
 
-        if(points.Any(s=> s.Y < 0 || s.Y > sizeY || s.X < 0 || s.X > sizeX || GetCellType(s.X,s.Y) != Tile.Unused /*|| room.GetCellAt(x - s.X,y - s.Y) != Tile.Unused*/)) return false;
+        if(points.Any(s=> s.Y < 0 || s.Y > sizeY || s.X < 0 || s.X > sizeX || GetCellType(s.X,s.Y) != Tile.Unused) return false;
 
         Tile[] tiles = room.GetLayout();
 
@@ -372,5 +375,400 @@ public class DrunkardWalk {
 
         Console.WriteLine($"Finished: generated {currentFeatures} features and {Corridors} Corridors");
         Console.ReadKey();
+
+        int row = 0;
+        foreach (var item in map)
+        {
+            Console.Write((char)item);
+
+            row++;
+
+            if(row >= sizeX){
+                row = 0;
+                Console.Write("\n");
+            }
+        }
+
+        Console.ReadKey();
+    }
+}*/
+
+/// <summary>
+///     https://www.roguebasin.com/index.php?title=Dungeon-Building_Algorithm
+///     https://www.roguebasin.com/index.php/CSharp_Example_of_a_Dungeon-Building_Algorithm
+/// </summary>
+public class DrunkardWalk {
+
+    struct BoundingBox {
+        public Vector2 TopLeft { get; init; }
+        public Vector2 BottomRight { get; init; }
+        public int Width { get; init; }
+        public int Heigth { get; init; }
+
+        public override string ToString(){
+            return $"<BoundingBox Width={Width} Height={Heigth} TopLeft={TopLeft} BottomRight={BottomRight}/>";
+        } 
+    }
+
+    private const int SpecialRoomChance = 10;
+    private const int ChanceRoom = 75;
+    public int MapMaxWidth = 80;
+    public int MapMaxHeight = 25;
+    private int _mapWidth;
+    private int _mapHeight;
+    private int _features;
+    private Tile[] _dungeonMap = {};
+    private readonly Random _rnd = new Random();
+    private readonly Action<string> _logger;
+    private readonly Room[] _NormalRooms;
+    private readonly Room[] _StartingRooms;
+    private readonly Room[] _SpecialRooms;
+    public DrunkardWalk(Action<string> logger){
+        _logger = logger;
+
+        _NormalRooms = LoadRoomFile("NormalRooms.json");
+        _StartingRooms = LoadRoomFile("StartingRooms.json");
+        _SpecialRooms = LoadRoomFile("SpecialRooms.json");
+    } 
+    private Room[] LoadRoomFile(string path){
+        string raw = File.ReadAllText(path);
+        Room[]? rooms = JsonSerializer.Deserialize<Room[]>(raw);
+
+        if(rooms is null) throw new FileLoadException($"Failed to load file {path}");
+
+        return rooms;
+    }
+    public Tile[] GetMap(){
+        return _dungeonMap;
+    }
+    public void CreateDungeon(int inX, int inY, int inFeatures){
+        if(inFeatures < 1 || inX < 10 || inY < 10) throw new ArgumentOutOfRangeException();
+
+        _features = inFeatures;
+        _mapWidth = inX > MapMaxWidth ? MapMaxWidth : inX;
+        _mapHeight = inY > MapMaxHeight ? MapMaxHeight : inY;
+        
+        _logger($"Map Width: {_mapWidth}");
+        _logger($"Map Height: {_mapHeight}");
+        _logger($"Map Features: {_features}");
+
+        _dungeonMap = new Tile[_mapWidth * _mapHeight];
+
+        for (int y = 0; y < _mapHeight; y++)
+        {
+            for (int x = 0; x < _mapWidth; x++)
+            {
+                SetCell(x,y,Tile.Unused);
+            }
+        }
+
+        Direction currentDirection = RandomDirection();
+        Vector2? currentExit = null;
+        BoundingBox? currentFeature = null;
+        int currentFeatures = 0;
+
+        currentFeature = MakeRoom(_mapWidth / 2, _mapHeight / 2, RandomDirection(), 2);
+
+        _logger($"Current Direction: {currentDirection} {currentFeature}");
+        if(currentFeature is null) throw new Exception("Failed to init map");
+        currentFeatures++;
+
+        currentExit = GetRoomExit(currentFeature.Value,currentDirection);
+   
+            
+        for(int countingTries = 0; countingTries < 1000; countingTries++){
+            if(currentFeatures == _features){
+                break;
+            }   
+
+            if(currentExit is null) continue;
+
+            int feature = _rnd.Next(0,100);
+                
+            if(feature <= ChanceRoom){
+                int special = _rnd.Next(0,100);
+
+                if(special >= SpecialRoomChance){
+                    continue;
+                }
+
+                BoundingBox? nextFeature = MakeRoom(currentExit.X, currentExit.Y,currentDirection,1);
+
+                if(!nextFeature.HasValue) {
+                    throw new Exception("Unable to place feature");
+                }
+
+                currentFeature = nextFeature;
+
+                Direction nextDirection = GetExludedRandomDirection(new Direction[]{ currentDirection });
+
+                currentExit = GetRoomExit(currentFeature.Value, nextDirection);
+
+                currentDirection = nextDirection;
+        
+                continue;
+            } else if(feature <= ChanceRoom){
+                BoundingBox? nextFeature = MakeCorridor(currentExit.X,currentExit.Y,8,currentDirection);
+
+                if(!nextFeature.HasValue){
+                    throw new Exception("Unable to place corridor");
+                }
+
+                currentFeature = nextFeature;
+                Direction nextDirection = GetExludedRandomDirection(new Direction[]{ currentDirection });
+                currentExit = GetRoomExit(currentFeature.Value,nextDirection);
+            }
+        }
+    }
+
+    private Vector2 GetRoomExit(BoundingBox bounding, Direction d){
+        Vector2 topLeft = bounding.TopLeft;
+        Vector2 bottomRight = bounding.BottomRight;
+        int width = bounding.Width;
+        int height = bounding.Heigth;
+
+        switch (d)
+        {
+            case Direction.North: {
+                for (int x = 0; x < width; x++)
+                {
+                    int idx = _rnd.Next(topLeft.X + 1,bottomRight.X - 1);
+                    _logger($"Idx {idx},{topLeft.Y} {GetCellType(idx,topLeft.Y)}");
+                    if(GetCellType(idx,topLeft.Y) != Tile.Wall) continue;
+                    _logger("OK");
+                    return new Vector2(idx, topLeft.Y);
+                }
+
+                throw new IndexOutOfRangeException("Unable to make a door in the given direction");
+            }
+            case Direction.South: {
+                for (int x = 0; x < width; x++)
+                {
+                    int idx = _rnd.Next(topLeft.X + 1, bottomRight.X - 1);
+                    _logger($"Idx {idx},{topLeft.Y} {GetCellType(idx,bottomRight.Y)}");
+                    if(GetCellType(idx,bottomRight.Y) != Tile.Wall) continue;
+                    _logger("OK");
+                    return new Vector2(idx, bottomRight.Y);
+                }
+                throw new IndexOutOfRangeException("Unable to make a door in the given direction");
+            }
+            case Direction.West: {
+                for (int y = 0; y < height; y++)
+                {
+                    int idx = _rnd.Next(topLeft.Y + 1, bottomRight.Y - 1);
+                    _logger($"Idx {topLeft.X},{idx} {GetCellType(topLeft.X,idx)}");
+                    if(GetCellType(topLeft.X,idx) != Tile.Wall) continue;
+                    _logger("OK");
+                    return new Vector2(topLeft.X,idx);
+                }
+
+                throw new IndexOutOfRangeException("Unable to make a door in the given direction");
+            }
+            case Direction.East: {
+                for (int y = 0; y < height; y++)
+                {
+                    int idx = _rnd.Next(topLeft.Y + 1, bottomRight.Y - 1);
+                    _logger($"Idx {topLeft.X},{idx} {GetCellType(bottomRight.X,idx)}");
+                    if(GetCellType(bottomRight.X,idx) != Tile.Wall) continue;
+                    _logger("OK");
+                    return new Vector2(bottomRight.X,idx);
+                }
+                throw new IndexOutOfRangeException("Unable to make a door in the given direction");
+            }
+        }
+
+        throw new InvalidOperationException();
+    }
+
+
+    private void SetCell(int x, int y, Tile cell){
+        _dungeonMap[x + _mapWidth * y] = cell;
+    }
+
+    private Tile GetCellType(int x, int y){
+        return _dungeonMap[x + _mapWidth * y];
+    }
+
+    private Room[] GetRoomFromType(int group){
+        switch (group)
+        {
+            case 0:
+                return _NormalRooms;
+            case 1:
+                return _SpecialRooms;
+            case 2:
+                return _StartingRooms;
+            default:
+                throw new IndexOutOfRangeException();
+        }
+    }
+
+    private Direction RandomDirection(){
+        int dir = _rnd.Next(0,4);
+        switch (dir)
+        {
+            case 0:
+                return Direction.North;
+            case 1:
+                return Direction.East;
+            case 2:
+                return Direction.South;
+            case 3:
+                return Direction.West;
+        }
+
+        throw new IndexOutOfRangeException();
+    }
+
+    private Direction GetExludedRandomDirection(Direction[] ignore){
+        Direction[] allowed = new[]{
+            Direction.East,
+            Direction.North,
+            Direction.South,
+            Direction.West
+        };
+        ImmutableArray<Direction> validDirections = allowed.Where(e=> !ignore.Contains(e)).ToImmutableArray();
+        int idx = _rnd.Next(0,validDirections.Length);
+        return validDirections[idx];
+    }
+
+    private BoundingBox? MakeRoom(int x, int y, Direction d, int roomGroup = 0){
+        Room[] rooms = GetRoomFromType(roomGroup);
+        
+        int roomIdx = _rnd.Next(rooms.Length);
+        Room room = rooms[roomIdx];
+        int xWidth = room.GetWidth();
+
+        IEnumerable<Vector2> points = room.GetPoints(x,y,d);
+    
+        if(points.Any(s=> s.Y < 0 || s.Y > _mapHeight || s.X < 0 || s.X > _mapWidth || GetCellType(s.X,s.Y) != Tile.Unused)) return null;
+
+        _logger($"Making room:{room.Id}, int y={y}, int x={x}");
+
+        Tile[] tiles = room.GetLayout();
+
+        int row = 0;
+        int col = 0;
+        foreach(var p in points){
+            SetCell(p.X,p.Y,tiles[row + xWidth * col]);
+            row++;
+            if(row >= xWidth){
+                row = 0;
+                col++;
+            }
+        }
+
+        return new BoundingBox {  
+            TopLeft = room.GetTopLeft(x,y),
+            BottomRight= room.GetBottomRight(x,y),
+            Width = room.GetWidth(),
+            Heigth = room.GetHeight()
+        };
+    }
+    private BoundingBox? MakeCorridor(int x, int y, int length, Direction direction){
+        int len = _rnd.Next(2,length);
+        
+        int xtemp;
+        int ytemp = 0;
+
+        switch (direction)
+        {
+            case Direction.North:
+                    // north
+                    // check if there's enough space for the corridor
+                    // start with checking it's not out of the boundaries
+                    if (x < 0 || x > _mapWidth) return null;
+                    xtemp = x;
+    
+                    // same thing here, to make sure it's not out of the boundaries
+                    for (ytemp = y; ytemp > (y - len); ytemp--)
+                    {
+                        if (ytemp < 0 || ytemp > _mapHeight) return null; // oh boho, it was!
+                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return null;
+                    }
+    
+                    // if we're still here, let's start building
+                    for (ytemp = y; ytemp > (y - len); ytemp--)
+                    {
+                        SetCell(xtemp, ytemp, Tile.Floor);
+                    }
+    
+                    return new BoundingBox{
+                        Width = 1,
+                        Heigth = len,
+                        TopLeft = new Vector2(x, y - len),
+                        BottomRight = new Vector2(x,y)
+                    };
+    
+            case Direction.East:
+                    // east
+                    if (y < 0 || y > _mapHeight) return null;
+                    ytemp = y;
+    
+                    for (xtemp = x; xtemp < (x + len); xtemp++)
+                    {
+                        if (xtemp < 0 || xtemp > _mapWidth) return null;
+                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return null;
+                    }
+    
+                    for (xtemp = x; xtemp < (x + len); xtemp++)
+                    {
+                        SetCell(xtemp, ytemp, Tile.Floor);
+                    }
+    
+                    return new BoundingBox {
+                        Heigth = 1,
+                        Width = len,
+                        TopLeft = new Vector2(x,y),
+                        BottomRight = new Vector2(x+len,y)
+                    };
+    
+            case Direction.South:
+                    // south
+                    if (x < 0 || x > _mapWidth) return null;
+                    xtemp = x;
+                    
+                    for (ytemp = y; ytemp < (y + len); ytemp++)
+                    {
+                        if (ytemp < 0 || ytemp > _mapHeight) return null;
+                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return null;
+                    }
+                    
+                    for (ytemp = y; ytemp < (y + len); ytemp++)
+                    {
+                        SetCell(xtemp, ytemp, Tile.Floor);
+                    }
+                    
+                    return new BoundingBox{
+                        Heigth = len,
+                        Width = 1,
+                        TopLeft = new Vector2(x,y),
+                        BottomRight = new Vector2(x,y+len)
+                    };
+            case Direction.West:
+                    // west
+                    if (ytemp < 0 || ytemp > _mapHeight) return null;
+                    ytemp = y;
+                    
+                    for (xtemp = x; xtemp > (x - len); xtemp--)
+                    {
+                        if (xtemp < 0 || xtemp > _mapWidth) return null;
+                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return null;
+                    }
+                    
+                    for (xtemp = x; xtemp > (x - len); xtemp--)
+                    {
+                        SetCell(xtemp, ytemp, Tile.Floor);
+                    }
+                    
+                    return new BoundingBox {
+                        Heigth = 1,
+                        Width = len,
+                        TopLeft = new Vector2(x - len,y),
+                        BottomRight = new Vector2(x,y)
+                    };
+        }
+
+        throw new InvalidOperationException();
     }
 }

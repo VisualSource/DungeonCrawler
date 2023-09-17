@@ -30,9 +30,11 @@ public class World {
        
     }
     public Tile[] GenearteWorld(){
-        DrunkardWalk generator = new DrunkardWalk(NormalRooms,StaringRooms,SpecialRooms,null);
+        DrunkardWalk generator = new DrunkardWalk(e=>Console.WriteLine(e));
 
-        generator.Genearte(50,50);
+        generator.CreateDungeon(50,50,1);
+
+        Console.ReadKey();
 
         return generator.GetMap();
     }
