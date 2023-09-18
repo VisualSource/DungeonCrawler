@@ -11,7 +11,7 @@ public class World {
     public Tile[] GenearteWorld(){
         DrunkardWalk generator = new DrunkardWalk(e=>Console.WriteLine(e));
 
-        generator.CreateDungeon(50,50,2);
+        generator.CreateDungeon(50,50,3);
 
         Console.ReadKey();
 

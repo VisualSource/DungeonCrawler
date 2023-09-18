@@ -1,400 +1,11 @@
 using System.Collections.Immutable;
-using System.Reflection.Metadata;
 using System.Text.Json;
 using Dungeon.Utils;
 namespace Dungeon.Geneartion;
 
-/*public class DrunkardWalk {
-    const int ChangeForRoom = 75;
-    const int ChangeForSpeialRoom = 10;
-    private Random rnd;
-
-    private readonly Action<string> logger;
-    private Tile[] map = {};
-
-    private int features = 10;
-    private int sizeX;
-    private int sizeY;
-
-    private int maxX = 50;
-    private int maxY = 50;
-    private Room[] NormalRooms;
-    private Room[] StartingRooms;
-    private Room[] SpecialRooms;
-    public int Corridors
-    {
-            get;
-            private set;
-    }
-    public DrunkardWalk(Room[] rooms, Room[] startingRooms, Room[] specialRooms, Action<string> logger, int? seed) {
-        rnd = seed is null ? new Random() : new Random((int)seed);
-        NormalRooms = rooms;
-        StartingRooms = startingRooms;
-        SpecialRooms = specialRooms;
-        this.logger = logger;
-    }
-
-    public static int GetFeatureLowerBound(int c, int len){
-        return c - len / 2;
-    }
-
-    public static int GetFeatureUpperBound(int c, int len){
-        return c + (len + 1) / 2;
-    }
-
-    public static IEnumerable<Vector2> GetRoomPoints(int x, int y, int xlen, int ylen, Direction d){
-        Func<int,int,int> a = GetFeatureLowerBound;
-        Func<int,int,int> b = GetFeatureUpperBound;
-
-        switch (d)
-        {
-            case Direction.North:
-                for (var xt = a(x, xlen); xt < b(x, xlen); xt++){
-                    for (var yt = y; yt > y - ylen; yt--){
-                        yield return new Vector2(xt,yt);
-                    }
-                }
-                break;
-            case Direction.East:
-                for (var xt = x; xt < x + xlen; xt++) for (var yt = a(y, ylen); yt < b(y, ylen); yt++) yield return new Vector2(xt, yt);
-                break;
-            case Direction.South:
-                for (var xt = a(x, xlen); xt < b(x, xlen); xt++) for (var yt = y; yt < y + ylen; yt++) yield return new Vector2(xt,yt);
-                break;
-            case Direction.West:
-                for (var xt = x; xt > x - xlen; xt--) for (var yt = a(y, ylen); yt < b(y, ylen); yt++) yield return new Vector2(xt,yt);
-                break;
-            case Direction.None:
-                for (int i = 0; i < ylen; i++)
-                {
-                    for (int j = 0; j < xlen; j++)
-                    {
-                        yield return new Vector2(j + x, i + y);
-                    }
-                }
-
-                break;
-            default:
-                yield break;
-        }
-    }
-
-    public Tile[] GetMap(){
-        return map;
-    }
-
-    Direction RandomDirection(){
-        int dir = rnd.Next(4);
-        switch (dir)
-        {
-            case 0:
-                return Direction.North;
-            case 1:
-                return Direction.East;
-            case 2:
-                return Direction.South;
-            case 3:
-                return Direction.West;
-            default:
-                throw new InvalidOperationException();
-        }
-    }
-
-    Tile GetCellType(int x, int y){
-        try
-        {
-            return map[x + sizeX * y];
-        }
-        catch (IndexOutOfRangeException)
-        {
-            Console.WriteLine($"{x},{y} is out of range.");
-            throw;
-        }
-    }
-
-    private void SetCell(int x, int y, Tile cell){
-        map[x + sizeX * y] = cell;
-    }
-    private Room[] GetRoomsFromType(int type){
-        switch (type)
-        {
-            case 1: 
-                return StartingRooms;
-            case 2:
-                return SpecialRooms;            
-            default:
-                return NormalRooms;
-        }
-    }
-
-    private bool MakeCorridor(int x, int y, int length, Direction direction){
-          // define the dimensions of the corridor (er.. only the width and height..)
-            int len =  rnd.Next(2, length);
-            const Tile Floor = Tile.Corridor;
-    
-            int xtemp;
-            int ytemp = 0;
-    
-            switch (direction)
-            {
-                case Direction.North:
-                    // north
-                    // check if there's enough space for the corridor
-                    // start with checking it's not out of the boundaries
-                    if (x < 0 || x > sizeX) return false;
-                    xtemp = x;
-    
-                    // same thing here, to make sure it's not out of the boundaries
-                    for (ytemp = y; ytemp > (y - len); ytemp--)
-                    {
-                        if (ytemp < 0 || ytemp > sizeY) return false; // oh boho, it was!
-                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return false;
-                    }
-    
-                    // if we're still here, let's start building
-                    Corridors++;
-                    for (ytemp = y; ytemp > (y - len); ytemp--)
-                    {
-                        SetCell(xtemp, ytemp, Floor);
-                    }
-    
-                    break;
-    
-                case Direction.East:
-                    // east
-                    if (y < 0 || y > sizeY) return false;
-                    ytemp = y;
-    
-                    for (xtemp = x; xtemp < (x + len); xtemp++)
-                    {
-                        if (xtemp < 0 || xtemp > sizeX) return false;
-                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return false;
-                    }
-    
-                    Corridors++;
-                    for (xtemp = x; xtemp < (x + len); xtemp++)
-                    {
-                       SetCell(xtemp, ytemp, Floor);
-                    }
-    
-                    break;
-    
-                case Direction.South:
-                    // south
-                    if (x < 0 || x > sizeX) return false;
-                    xtemp = x;
-                    
-                    for (ytemp = y; ytemp < (y + len); ytemp++)
-                    {
-                        if (ytemp < 0 || ytemp > sizeY) return false;
-                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return false;
-                    }
-                    
-                    Corridors++;
-                    for (ytemp = y; ytemp < (y + len); ytemp++)
-                    {
-                       SetCell(xtemp, ytemp, Floor);
-                    }
-                    
-                    break;
-                case Direction.West:
-                    // west
-                    if (ytemp < 0 || ytemp > sizeY) return false;
-                    ytemp = y;
-                    
-                    for (xtemp = x; xtemp > (x - len); xtemp--)
-                    {
-                        if (xtemp < 0 || xtemp > sizeX) return false;
-                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return false;
-                    }
-                    
-                    Corridors++;
-                    for (xtemp = x; xtemp > (x - len); xtemp--)
-                    {
-                        SetCell(xtemp, ytemp, Floor);
-                    }
-                    
-                    break;
-            }
-
-            // woot, we're still here! let's tell the other guys we're done!!
-            return true;
-    }
-    private bool MakeRoom(int x, int y, Direction direction, int roomType = 0){
-        Room[] rooms = GetRoomsFromType(roomType);
-
-        int nextRoom = rnd.Next(rooms.Length);
-        Room room = rooms[nextRoom];
-
-        int roomWidth = room.GetWidth();
-        int roomHeight = room.GetHeight();
-
-        var points = room.GetPoints(x,y);
-
-        if(points.Any(s=> s.Y < 0 || s.Y > sizeY || s.X < 0 || s.X > sizeX || GetCellType(s.X,s.Y) != Tile.Unused) return false;
-
-        Tile[] tiles = room.GetLayout();
-
-        int col = 0;
-        int row = 0;
-        foreach(var p in points){
-            
-            SetCell(p.X,p.Y,tiles[row + roomWidth * col]);
-
-            row++;
-            if(row >= roomWidth){
-                col++;
-                row = 0;
-            }
-        }
-
-        return true;
-    }
-
-    private void Initialize(){
-        for (int i = 0; i < sizeY; i++)
-        {   
-            for (int x = 0; x < sizeX; x++)
-            {
-                SetCell(x,i,Tile.Unused);
-            }
-        }
-    }
-
-    public bool InBounds(Vector2 v){
-        return v.X > 0 && v.X < maxX && v.Y > 0 && v.Y < maxY;
-    }
-
-    public IEnumerable<Tuple<Vector2,Direction>> GetSurroundingPoints(Vector2 v){
-        var points = new[]{
-            Tuple.Create(new Vector2(v.X,v.Y + 1),Direction.North),
-            Tuple.Create(new Vector2(v.X - 1,v.Y),Direction.East),
-            Tuple.Create(new Vector2(v.X,v.Y -1),Direction.South),
-            Tuple.Create(new Vector2(v.X + 1, v.Y),Direction.West)
-        };
-
-        return points.Where(p=> InBounds(p.Item1));
-    }
-
-    public IEnumerable<Tuple<Vector2,Direction,Tile>> GetSurroundings(Vector2 v){
-        return GetSurroundingPoints(v).Select(r => Tuple.Create(r.Item1,r.Item2,GetCellType(r.Item1.X,r.Item1.Y)));
-    }
-
-    public void Genearte(int x, int y){
-        sizeX = x;
-        sizeY = y;
-
-        map = new Tile[sizeX * sizeY];
-
-        Initialize();
-
-        MakeRoom(sizeX / 2, sizeY / 2,RandomDirection(),1);
-
-        int currentFeatures = 1;
-
-        for(int countingTries = 0; countingTries < 1000; countingTries++){
-            if(currentFeatures == features){
-                break;
-            }
-
-            int newX = 0;
-            int newY = 0;
-            int modX = 0;
-            int modY = 0;
-            Direction? validTile = null;
-
-            for(int testing = 0; testing < 1000; testing++){
-                newX = rnd.Next(1,sizeX - 1);
-                newY = rnd.Next(1,sizeY - 1);
-
-                if(GetCellType(newX,newY) == Tile.Corridor || GetCellType(newX,newY) == Tile.Wall){
-                    var surrounding = GetSurroundings(new Vector2(newX,newY));
-
-                    var canReach = surrounding.FirstOrDefault(s => s.Item3 == Tile.Floor || s.Item3 == Tile.Corridor);
-
-                    if(canReach == null) {
-                        continue;
-                    }
-
-                    validTile = canReach.Item2;
-
-                    switch (canReach.Item2)
-                    {
-                        case Direction.North:
-                            modX = 0;
-                            modY = -1;
-                            break;
-                        case Direction.East:
-                            modX = 1;
-                            modY = 0;
-                            break;
-                        case Direction.South:
-                            modX = 0;
-                            modY = 1;
-                            break;
-                        case Direction.West:
-                            modX = -1;
-                            modY = 0;
-                            break;
-                        default:
-                            throw new InvalidOperationException();
-                    }
-
-                    if (GetCellType(newX, newY + 1) == Tile.Door) // north
-                    {
-                        validTile = null;
-                    } else if (GetCellType(newX - 1, newY) == Tile.Door) // east
-                        validTile = null;
-                    else if (GetCellType(newX, newY - 1) == Tile.Door) // south
-                        validTile = null;
-                    else if (GetCellType(newX + 1, newY) == Tile.Door) // west
-                        validTile = null;
-
-
-                    if (validTile.HasValue) break;
-                }
-            }
-
-            if(validTile.HasValue){
-                int feature = rnd.Next(0, 100);
-                if(feature <= ChangeForRoom){
-                    if(MakeRoom(newX + modX, newY + modY, validTile.Value)){
-                        currentFeatures++;
-                        SetCell(newX,newY,Tile.Door);
-                        SetCell(newX+modX,newY+modY,Tile.Floor);
-                    }
-                } else if(feature >= ChangeForRoom){
-                    if(MakeCorridor(newX + modX,newY + modY,6,validTile.Value)){
-                        currentFeatures++;
-                        SetCell(newX,newY,Tile.Door);
-                    }
-                }
-            }
-        }
-
-
-        Console.WriteLine($"Finished: generated {currentFeatures} features and {Corridors} Corridors");
-        Console.ReadKey();
-
-        int row = 0;
-        foreach (var item in map)
-        {
-            Console.Write((char)item);
-
-            row++;
-
-            if(row >= sizeX){
-                row = 0;
-                Console.Write("\n");
-            }
-        }
-
-        Console.ReadKey();
-    }
-}*/
-
 /// <summary>
 ///     https://www.roguebasin.com/index.php?title=Dungeon-Building_Algorithm
+///     
 ///     https://www.roguebasin.com/index.php/CSharp_Example_of_a_Dungeon-Building_Algorithm
 /// </summary>
 public class DrunkardWalk {
@@ -409,16 +20,16 @@ public class DrunkardWalk {
             return $"<BoundingBox Width={Width} Height={Heigth} TopLeft={TopLeft} BottomRight={BottomRight}/>";
         } 
     }
-
     private const int SpecialRoomChance = 10;
-    private const int ChanceRoom = 75;
+    private const int ChanceRoom = 5;
     public int MapMaxWidth = 200;
     public int MapMaxHeight = 200;
     private int _mapWidth;
     private int _mapHeight;
     private int _features;
     private Tile[] _dungeonMap = {};
-    private readonly Random _rnd = new Random();
+    private readonly FakeRandom _fakeRnd = new FakeRandom();
+    private readonly DefaultRandom _rnd = new DefaultRandom();
     private readonly Action<string> _logger;
     private readonly Room[] _NormalRooms;
     private readonly Room[] _StartingRooms;
@@ -426,9 +37,9 @@ public class DrunkardWalk {
     public DrunkardWalk(Action<string> logger){
         _logger = logger;
 
-        _NormalRooms = LoadRoomFile("src/DungeonCrawler/data/NormalRooms.json");
-        _StartingRooms = LoadRoomFile("src/DungeonCrawler/data/StartingRooms.json");
-        _SpecialRooms = LoadRoomFile("src/DungeonCrawler/data/SpecialRooms.json");
+        _NormalRooms = LoadRoomFile("data/NormalRooms.json");
+        _StartingRooms = LoadRoomFile("data/StartingRooms.json");
+        _SpecialRooms = LoadRoomFile("data/SpecialRooms.json");
     } 
     private Room[] LoadRoomFile(string path){
         string raw = File.ReadAllText(path);
@@ -525,8 +136,9 @@ public class DrunkardWalk {
                 currentFeatures++;
 
                 continue;
-            } else if(feature <= ChanceRoom){
-                BoundingBox? nextFeature = MakeCorridor(currentExit.X,currentExit.Y,8,currentDirection);
+            } 
+            else if(feature >= ChanceRoom){
+                BoundingBox? nextFeature = MakeCorridor(currentExit.X,currentExit.Y,15,currentDirection);
 
                 if(!nextFeature.HasValue){
                     throw new Exception("Unable to place corridor");
@@ -536,17 +148,21 @@ public class DrunkardWalk {
 
                 currentFeature = nextFeature;
                 Direction nextDirection = GetExludedRandomDirection(new Direction[]{ currentDirection });
-                currentExit = GetRoomExit(currentFeature.Value,nextDirection);
+
+                currentFeatures++;
+
+                //currentExit = GetRoomExit(currentFeature.Value,nextDirection);
+                //currentDirection = nextDirection;
             }
         }
     }
-
+    
     private Vector2 GetRoomExit(BoundingBox bounding, Direction d){
         Vector2 topLeft = bounding.TopLeft;
         Vector2 bottomRight = bounding.BottomRight;
         int width = bounding.Width;
         int height = bounding.Heigth;
-
+        
         switch (d)
         {
             case Direction.North: {
@@ -609,23 +225,31 @@ public class DrunkardWalk {
 
         SetCell(door.X,door.Y,Tile.Door);
 
-        int offsetX = 0;
-        int offsetY = 0;    
+        int offsetX;
+        int offsetY;
         switch (d)
         {
             case Direction.North: {
-                offsetY = 1;
+                offsetY = -1;
+                offsetX = 0;
                 break;
             }
             case Direction.West: {
                 offsetX = -1;
+                offsetY = 0;
                 break;
             }
             case Direction.East:
                 offsetX = 1;
+                offsetY = 0;
                 break;
             case Direction.South:
-                offsetY = -1;
+                offsetY = 1;
+                offsetX = 0;
+                break;
+            default:
+                offsetX = 0;
+                offsetY = 0;
                 break;
         }
 
@@ -682,7 +306,7 @@ public class DrunkardWalk {
         Room room = rooms[roomIdx];
         int xWidth = room.GetWidth();
 
-        IEnumerable<Vector2> points = room.GetPoints(x,y,d);
+        IEnumerable<Vector2> points = room.GetPoints(x,y,d,_rnd);
     
         if(points.Any(s=> s.Y < 0 || s.Y > _mapHeight || s.X < 0 || s.X > _mapWidth || GetCellType(s.X,s.Y) != Tile.Unused)) return null;
 
@@ -704,116 +328,40 @@ public class DrunkardWalk {
         return new BoundingBox {  
             TopLeft = points.First(),
             BottomRight= points.Last(),
-            Width = room.GetWidth(),
+            Width = xWidth,
             Heigth = room.GetHeight()
         };
     }
     private BoundingBox? MakeCorridor(int x, int y, int length, Direction direction){
         int len = _rnd.Next(2,length);
 
-        _logger($"Corridor {len}");
-        
-        int xtemp;
-        int ytemp = 0;
+        Corridor corridor = new Corridor(len,direction);
 
-        switch (direction)
-        {
-            case Direction.North:
-                    // north
-                    // check if there's enough space for the corridor
-                    // start with checking it's not out of the boundaries
-                    if (x < 0 || x > _mapWidth) return null;
-                    xtemp = x;
-    
-                    // same thing here, to make sure it's not out of the boundaries
-                    for (ytemp = y; ytemp > (y - len); ytemp--)
-                    {
-                        if (ytemp < 0 || ytemp > _mapHeight) return null; // oh boho, it was!
-                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return null;
-                    }
-    
-                    // if we're still here, let's start building
-                    for (ytemp = y; ytemp > (y - len); ytemp--)
-                    {
-                        SetCell(xtemp, ytemp, Tile.Floor);
-                    }
-    
-                    return new BoundingBox{
-                        Width = 1,
-                        Heigth = len,
-                        TopLeft = new Vector2(x, y - len),
-                        BottomRight = new Vector2(x,y)
-                    };
-    
-            case Direction.East:
-                    // east
-                    if (y < 0 || y > _mapHeight) return null;
-                    ytemp = y;
-    
-                    for (xtemp = x; xtemp < (x + len); xtemp++)
-                    {
-                        if (xtemp < 0 || xtemp > _mapWidth) return null;
-                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return null;
-                    }
-    
-                    for (xtemp = x; xtemp < (x + len); xtemp++)
-                    {
-                        SetCell(xtemp, ytemp, Tile.Floor);
-                    }
-    
-                    return new BoundingBox {
-                        Heigth = 1,
-                        Width = len,
-                        TopLeft = new Vector2(x,y),
-                        BottomRight = new Vector2(x+len,y)
-                    };
-    
-            case Direction.South:
-                    // south
-                    if (x < 0 || x > _mapWidth) return null;
-                    xtemp = x;
-                    
-                    for (ytemp = y; ytemp < (y + len); ytemp++)
-                    {
-                        if (ytemp < 0 || ytemp > _mapHeight) return null;
-                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return null;
-                    }
-                    
-                    for (ytemp = y; ytemp < (y + len); ytemp++)
-                    {
-                        SetCell(xtemp, ytemp, Tile.Floor);
-                    }
-                    
-                    return new BoundingBox{
-                        Heigth = len,
-                        Width = 1,
-                        TopLeft = new Vector2(x,y),
-                        BottomRight = new Vector2(x,y+len)
-                    };
-            case Direction.West:
-                    // west
-                    if (ytemp < 0 || ytemp > _mapHeight) return null;
-                    ytemp = y;
-                    
-                    for (xtemp = x; xtemp > (x - len); xtemp--)
-                    {
-                        if (xtemp < 0 || xtemp > _mapWidth) return null;
-                        if (GetCellType(xtemp, ytemp) != Tile.Unused) return null;
-                    }
-                    
-                    for (xtemp = x; xtemp > (x - len); xtemp--)
-                    {
-                        SetCell(xtemp, ytemp, Tile.Floor);
-                    }
-                    
-                    return new BoundingBox {
-                        Heigth = 1,
-                        Width = len,
-                        TopLeft = new Vector2(x - len,y),
-                        BottomRight = new Vector2(x,y)
-                    };
+        IEnumerable<Vector2> points = corridor.GetCorridorPoints(x,y,_fakeRnd);
+
+        if(points.Any(s=> s.Y < 0 || s.Y > _mapHeight || s.X < 0 || s.X > _mapWidth || GetCellType(s.X,s.Y) != Tile.Unused)) return null;
+
+        _logger($"{corridor} int y={y}, int x={x}");
+
+        Tile[] tiles = corridor.GetLayout();
+        int xWidth = corridor.GetWidth();
+
+        int row = 0;
+        int col = 0;
+        foreach(var p in points){
+            SetCell(p.X,p.Y,tiles[row + xWidth * col]);
+            row++;
+            if(row >= xWidth){
+                row = 0;
+                col++;
+            }
         }
 
-        throw new InvalidOperationException();
+        return new BoundingBox {  
+            TopLeft = points.First(),
+            BottomRight= points.Last(),
+            Width = xWidth,
+            Heigth = corridor.GetHeight()
+        };
     }
 }
