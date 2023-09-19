@@ -2,8 +2,11 @@ using Dungeon.Core;
 
 namespace Dungeon.Screen;
 
-public interface IScreen 
+public interface IScreen
 {
-    public void Input(Renderer renderer);
-    public void Render(Renderer renderer);
+    bool NeedsInit { get; set; }
+    Game Context { get; set; }
+    public void Init();
+    public void Input();
+    public void Render();
 }

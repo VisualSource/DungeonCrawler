@@ -1,51 +1,61 @@
+using System.Transactions;
 using Dungeon.Screen;
 
 namespace Dungeon.Core;
 
-public class Game {
+public class Game
+{
     private IScreen[] _screens;
-
     private int curIdx = 0;
-
-    private Renderer renderer = new Renderer("Dungeon crawler");
-   
-
-    private World world = new World();
-    public Game(){
-         _screens = new[]{
-            new GameScreen()
+    public Renderer Renderer = new Renderer("Dungeon crawler");
+    public Game()
+    {
+        _screens = new IScreen[]{
+            new TestScreen(this),
+            new GameScreen(this)
         };
     }
-
-    private void RenderHeader(){
-        renderer.WriteBuffer(String.Format("Name: {0}",player.Name),1,1); 
-        renderer.WriteBuffer("Health: ",1,2);
-        renderer.WriteBuffer(String.Format("World: {0}",world.LevelName),1,3);
-        renderer.WriteBuffer("Gold: ",17,1);
-
-
-       
-
-    }
-
-    public void Run(){
-        var level = world.GenearteWorld();
-        world.GenearteLevelName();
-
-        for (int y = 0; y < 18; y++)
+    public void SetScreen(int screen)
+    {
+        if (screen > _screens.Length || screen < 0)
         {
-            for (int x = 0; x < 48; x++)
-            {
-                renderer.WriteBuffer(level[(x + 20) + 50 * (y + 20)],x + 1,y + 6);
-            }
+            throw new IndexOutOfRangeException("Not Vaild screen id");
         }
 
-        RenderHeader();
-    
+        curIdx = screen;
+
+        _screens[curIdx].NeedsInit = true;
+        Renderer.IsDirty = true;
+    }
+    public void Run()
+    {
+        IScreen current = _screens[curIdx];
+        int prev = 0;
         while (true)
         {
-            _screens[curIdx].Render(renderer);
-            _screens[curIdx].Input(renderer);
+            if (prev != curIdx)
+            {
+                current = _screens[curIdx];
+                prev = curIdx;
+            }
+
+            if (current.NeedsInit)
+            {
+                current.Init();
+                current.NeedsInit = false;
+            }
+
+            if (Renderer.IsDirty)
+            {
+                Renderer.Render();
+            }
+
+            if (Console.KeyAvailable)
+            {
+                current.Input();
+            }
+
+            current.Render();
         }
     }
 }
