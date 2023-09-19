@@ -4,7 +4,6 @@ namespace Dungeon.Geneartion;
 public class Room {
     public required string Id { get; init; }
     public required string[] Layout { get; init; }
-
     public IEnumerable<Vector2> GetStartingOffset(Direction d){
         int width = GetWidth();
         int height = GetHeight();
@@ -78,18 +77,22 @@ public class Room {
     public IEnumerable<Vector2> GetPoints(int originX, int originY, Direction d, IRandom rnd){
         int width = GetWidth();
         int height = GetHeight();
-
-        int offsetX;
-        int offsetY;
-
         IEnumerable<Vector2> ranges = GetStartingOffset(d);
 
-        int idx = rnd.Next(ranges.Count());
-        Console.WriteLine($"Range offset: ${idx} Offset: {ranges.Count()}");
+        int rangeCount = ranges.Count();
+        if(rangeCount <= 0) throw new ArgumentOutOfRangeException("Insufficient exit door ranges.");
+    
+        int idx = rnd.Next(rangeCount);
+
         Vector2 range = ranges.ElementAt(idx);
+
         int offset = rnd.Next(range.X,range.Y);
+        return InternalGetPoints(originX,originY,d,offset,width,height);
+    }
 
-
+    private IEnumerable<Vector2> InternalGetPoints(int originX, int originY, Direction d, int offset, int width, int height){
+        int offsetX;
+        int offsetY;
 
         switch (d)
         {

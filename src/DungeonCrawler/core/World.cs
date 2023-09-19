@@ -11,23 +11,13 @@ public class World {
     public Tile[] GenearteWorld(){
         DrunkardWalk generator = new DrunkardWalk(e=>Console.WriteLine(e));
 
-        generator.CreateDungeon(50,50,3);
+        generator.CreateDungeon(150,100,6);
 
         Console.ReadKey();
 
         Tile[] map = generator.GetMap();
-        
-        int row = 0;
-        foreach(var item in map){
 
-            Console.Write((char)item);
-            row++;
-
-            if(row >= 50){
-                Console.Write("\n");
-                row = 0;
-            }
-        }
+        generator.Print();
 
         Console.ReadKey();
 
