@@ -18,6 +18,13 @@ public class Renderer
         Console.OutputEncoding = System.Text.Encoding.Unicode;
 
         // Border
+        Reset();
+    }
+
+    public void Reset()
+    {
+        buffer = new List<List<char>>();
+
         for (int y = 0; y < ScreenHeight; y++)
         {
             var row = new List<char> { };
@@ -77,6 +84,12 @@ public class Renderer
 
         IsDirty = true;
     }
+    /// <summary>
+    /// https://stackoverflow.com/questions/54122982/how-to-color-words-in-different-colours-in-a-console-writeline-in-a-console-appl
+    /// </summary>
+    /// <param name="content"></param>
+    /// <param name="left"></param>
+    /// <param name="top"></param>
     public void ColorWrite(string content, int left, int top)
     {
         Console.SetCursorPosition(left, top);

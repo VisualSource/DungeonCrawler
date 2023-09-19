@@ -56,6 +56,11 @@ public class TestScreen : IScreen
             }
         }
 
+        if (input.Key == ConsoleKey.E)
+        {
+            Context.SetScreen(1);
+        }
+
     }
 
     public void Render()

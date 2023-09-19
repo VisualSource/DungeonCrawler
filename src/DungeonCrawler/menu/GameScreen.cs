@@ -56,6 +56,11 @@ public class GameScreen : IScreen
             update = player.MoveLeft();
         }
 
+        if (input.Key == ConsoleKey.E)
+        {
+            Context.SetScreen(0);
+        }
+
         if (update)
         {
             Context.Renderer.WriteVer("X", player.X, player.Y);

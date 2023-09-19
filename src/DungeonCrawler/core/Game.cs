@@ -24,6 +24,8 @@ public class Game
 
         curIdx = screen;
 
+        Renderer.Reset();
+
         _screens[curIdx].NeedsInit = true;
         Renderer.IsDirty = true;
     }
