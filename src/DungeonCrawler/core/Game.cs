@@ -11,18 +11,15 @@ public class Game
     public Game()
     {
         _screens = new IScreen[]{
-            new TestScreen(this),
-            new GameScreen(this)
+            new MainMenuScreen(this),
+            new GameScreen(this),
+            new SettingsScreen(this),
+            new PauseScreen(this),
         };
     }
-    public void SetScreen(int screen)
+    public void SetScreen(Screen.Screen screen)
     {
-        if (screen > _screens.Length || screen < 0)
-        {
-            throw new IndexOutOfRangeException("Not Vaild screen id");
-        }
-
-        curIdx = screen;
+        curIdx = (int)screen;
 
         Renderer.Reset();
 
@@ -54,7 +51,8 @@ public class Game
 
             if (Console.KeyAvailable)
             {
-                current.Input();
+                ConsoleKeyInfo input = Console.ReadKey(true);
+                current.Input(input);
             }
 
             current.Render();

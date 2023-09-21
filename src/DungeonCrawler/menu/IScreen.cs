@@ -7,6 +7,6 @@ public interface IScreen
     bool NeedsInit { get; set; }
     Game Context { get; set; }
     public void Init();
-    public void Input();
+    public void Input(ConsoleKeyInfo input);
     public void Render();
 }

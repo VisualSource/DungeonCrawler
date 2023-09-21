@@ -9,16 +9,19 @@ namespace Dungeon.Geneartion;
 ///     
 ///     https://www.roguebasin.com/index.php/CSharp_Example_of_a_Dungeon-Building_Algorithm
 /// </summary>
-public class DrunkardWalk {
-    struct BoundingBox {
+public class DrunkardWalk
+{
+    struct BoundingBox
+    {
         public Vector2 TopLeft { get; init; }
         public Vector2 BottomRight { get; init; }
         public int Width { get; init; }
         public int Heigth { get; init; }
 
-        public override string ToString(){
+        public override string ToString()
+        {
             return $"<BoundingBox Width={Width} Height={Heigth} TopLeft={TopLeft} BottomRight={BottomRight}/>";
-        } 
+        }
     }
     private const int SpecialRoomChance = 10;
     private const int ChanceRoom = 70;
@@ -27,52 +30,59 @@ public class DrunkardWalk {
     private int _mapWidth;
     private int _mapHeight;
     private int _features;
-    private Tile[] _dungeonMap = {};
+    private Tile[] _dungeonMap = { };
     private readonly FakeRandom _fakeRnd = new FakeRandom();
     private readonly DefaultRandom _rnd = new DefaultRandom();
     private readonly Action<string> _logger;
     private readonly Room[] _NormalRooms;
     private readonly Room[] _StartingRooms;
     private readonly Room[] _SpecialRooms;
-    public DrunkardWalk(Action<string> logger){
+    public DrunkardWalk(Action<string> logger)
+    {
         _logger = logger;
 
         _NormalRooms = LoadRoomFile("data/NormalRooms.json");
         _StartingRooms = LoadRoomFile("data/StartingRooms.json");
         _SpecialRooms = LoadRoomFile("data/SpecialRooms.json");
-    } 
-    private Room[] LoadRoomFile(string path){
+    }
+    private Room[] LoadRoomFile(string path)
+    {
         string raw = File.ReadAllText(path);
         Room[]? rooms = JsonSerializer.Deserialize<Room[]>(raw);
 
-        if(rooms is null) throw new FileLoadException($"Failed to load file {path}");
+        if (rooms is null) throw new FileLoadException($"Failed to load file {path}");
 
         return rooms;
     }
-    public Tile[] GetMap(){
+    public Tile[] GetMap()
+    {
         return _dungeonMap;
     }
 
-    public void Print(){
-         int row = 0;
-        foreach(var item in _dungeonMap){
+    public void Print()
+    {
+        int row = 0;
+        foreach (var item in _dungeonMap)
+        {
 
             Console.Write((char)item);
             row++;
 
-            if(row >= _mapWidth){
+            if (row >= _mapWidth)
+            {
                 Console.Write("\n");
                 row = 0;
             }
         }
     }
-    public void CreateDungeon(int inX, int inY, int inFeatures){
-        if(inFeatures < 1 || inX < 10 || inY < 10) throw new ArgumentOutOfRangeException();
+    public Vector2 CreateDungeon(int inX, int inY, int inFeatures)
+    {
+        if (inFeatures < 1 || inX < 10 || inY < 10) throw new ArgumentOutOfRangeException();
 
         _features = inFeatures;
         _mapWidth = inX > MapMaxWidth ? MapMaxWidth : inX;
         _mapHeight = inY > MapMaxHeight ? MapMaxHeight : inY;
-        
+
         _logger($"Map Width: {_mapWidth}");
         _logger($"Map Height: {_mapHeight}");
         _logger($"Map Features: {_features}");
@@ -83,7 +93,7 @@ public class DrunkardWalk {
         {
             for (int x = 0; x < _mapWidth; x++)
             {
-                SetCell(x,y,Tile.Unused);
+                SetCell(x, y, Tile.Unused);
             }
         }
 
@@ -95,35 +105,42 @@ public class DrunkardWalk {
         currentFeature = MakeRoom(_mapWidth / 2, _mapHeight / 2, RandomDirection(), 2);
 
         _logger($"Current Direction: {currentDirection} {currentFeature}");
-        if(currentFeature is null) throw new Exception("Failed to init map");
+        if (currentFeature is null) throw new Exception("Failed to init map");
+
+        Vector2 startingPoint = GetStartingPoint(currentFeature.Value);
+
         currentFeatures++;
-        currentExit = GetRoomExit(currentFeature.Value,currentDirection);
-   
-        for(int countingTries = 0; countingTries < 1000; countingTries++){
-            if(currentFeatures == _features){
+        currentExit = GetRoomExit(currentFeature.Value, currentDirection);
+
+        for (int countingTries = 0; countingTries < 1000; countingTries++)
+        {
+            if (currentFeatures == _features)
+            {
                 break;
-            }   
+            }
 
-            if(currentExit is null) continue;
+            if (currentExit is null) continue;
 
-            int feature = _rnd.Next(0,100);
-                
-            if(feature <= ChanceRoom){
-                int special = _rnd.Next(0,100);
+            int feature = _rnd.Next(0, 100);
+
+            if (feature <= ChanceRoom)
+            {
+                int special = _rnd.Next(0, 100);
 
                 _logger($"Current: {currentDirection} {currentFeature}");
-                BoundingBox? nextFeature = MakeRoom(currentExit.X,currentExit.Y,currentDirection,special <= SpecialRoomChance ? 0 : 1);
-             
-                if(!nextFeature.HasValue) {
+                BoundingBox? nextFeature = MakeRoom(currentExit.X, currentExit.Y, currentDirection, special <= SpecialRoomChance ? 0 : 1);
+
+                if (!nextFeature.HasValue)
+                {
                     continue;
                     //throw new Exception("Unable to place feature");
                 }
 
-                SetDoor(currentExit,currentDirection);
+                SetDoor(currentExit, currentDirection);
 
                 currentFeature = nextFeature;
 
-                Direction nextDirection = GetExludedRandomDirection(new Direction[]{ GetInvaildDirs(currentDirection) });
+                Direction nextDirection = GetExludedRandomDirection(new Direction[] { GetInvaildDirs(currentDirection) });
 
                 currentExit = GetRoomExit(currentFeature.Value, nextDirection);
 
@@ -134,23 +151,25 @@ public class DrunkardWalk {
                 //_logger($"Current: {currentDirection} {currentFeature}");
 
                 continue;
-            } 
-            else if(feature >= ChanceRoom){
+            }
+            else if (feature >= ChanceRoom)
+            {
                 _logger($"Current: {currentDirection} {currentFeature}");
 
-                BoundingBox? nextFeature = MakeCorridor(currentExit.X,currentExit.Y,4,currentDirection);
+                BoundingBox? nextFeature = MakeCorridor(currentExit.X, currentExit.Y, 4, currentDirection);
 
-                if(nextFeature is null){
+                if (nextFeature is null)
+                {
                     continue;
                     //throw new Exception("Unable to place corridor");
                 }
 
-                SetDoor(currentExit,currentDirection);
+                SetDoor(currentExit, currentDirection);
 
                 currentFeature = nextFeature;
-                Direction nextDirection = GetExludedRandomDirection(new Direction[]{ GetInvaildDirs(currentDirection) });
+                Direction nextDirection = GetExludedRandomDirection(new Direction[] { GetInvaildDirs(currentDirection) });
 
-                currentExit = GetRoomExit(currentFeature.Value,nextDirection);
+                currentExit = GetRoomExit(currentFeature.Value, nextDirection);
 
                 currentFeatures++;
 
@@ -159,9 +178,19 @@ public class DrunkardWalk {
                 _logger($"Features {currentFeatures}");
             }
         }
-    }
 
-    private Direction GetInvaildDirs(Direction startD){
+        return startingPoint;
+    }
+    private Vector2 GetStartingPoint(BoundingBox box)
+    {
+
+        int x = _rnd.Next(box.TopLeft.X + 1, box.BottomRight.X - 1);
+        int y = _rnd.Next(box.TopLeft.Y + 1, box.BottomRight.Y + 1);
+
+        return new Vector2(x, y);
+    }
+    private Direction GetInvaildDirs(Direction startD)
+    {
         switch (startD)
         {
             case Direction.North:
@@ -176,66 +205,73 @@ public class DrunkardWalk {
                 return startD;
         }
     }
-    private Vector2 GetRoomExit(BoundingBox bounding, Direction d){
+    private Vector2 GetRoomExit(BoundingBox bounding, Direction d)
+    {
         Vector2 topLeft = bounding.TopLeft;
         Vector2 bottomRight = bounding.BottomRight;
         int width = bounding.Width;
         int height = bounding.Heigth;
-        
+
         switch (d)
         {
-            case Direction.North: {
-                for (int x = 0; x < width; x++)
+            case Direction.North:
                 {
-                    int idx = _rnd.Next(topLeft.X + 1,bottomRight.X - 1);
-                     _logger($"Exit At ({idx},{topLeft.Y}) Wall: {(char)GetCellType(idx,topLeft.Y)} Floor: {(char)GetCellType(idx,topLeft.Y + 1)}");
-                    if(GetCellType(idx,topLeft.Y) != Tile.Wall || GetCellType(idx,topLeft.Y + 1) != Tile.Floor) continue;
-                    return new Vector2(idx, topLeft.Y);
-                }
+                    for (int x = 0; x < width; x++)
+                    {
+                        int idx = _rnd.Next(topLeft.X + 1, bottomRight.X - 1);
+                        _logger($"Exit At ({idx},{topLeft.Y}) Wall: {(char)GetCellType(idx, topLeft.Y)} Floor: {(char)GetCellType(idx, topLeft.Y + 1)}");
+                        if (GetCellType(idx, topLeft.Y) != Tile.Wall || GetCellType(idx, topLeft.Y + 1) != Tile.Floor) continue;
+                        return new Vector2(idx, topLeft.Y);
+                    }
 
-                throw new ArgumentOutOfRangeException($"Unable to make a door in the given direction ({d},\n{bounding})");
-            }
-            case Direction.South: {
-                for (int x = 0; x < width; x++)
-                {
-                    int idx = _rnd.Next(topLeft.X + 1, bottomRight.X - 1);
-                    if(GetCellType(idx,bottomRight.Y) != Tile.Wall || GetCellType(idx,bottomRight.Y - 1) != Tile.Floor) continue;
-                         _logger($"Exit At ({idx},{bottomRight.Y})");
-                    return new Vector2(idx, bottomRight.Y);
+                    throw new ArgumentOutOfRangeException($"Unable to make a door in the given direction ({d},\n{bounding})");
                 }
-                throw new ArgumentOutOfRangeException($"Unable to make a door in the given direction ({d},\n{bounding})");
-            }
-            case Direction.West: {
-                for (int y = 0; y < height; y++)
+            case Direction.South:
                 {
-                    int idx = _rnd.Next(topLeft.Y + 1, bottomRight.Y - 1);
-                    _logger($"({topLeft.X},{idx}) Wall: {(char)GetCellType(topLeft.X,idx)} Floor: {GetCellType(topLeft.X + 1,idx)}");
-                    if(GetCellType(topLeft.X,idx) != Tile.Wall || GetCellType(topLeft.X + 1,idx) != Tile.Floor) continue;
-                    _logger($"Exit At ({topLeft.X},{idx})");
-                    return new Vector2(topLeft.X,idx);
+                    for (int x = 0; x < width; x++)
+                    {
+                        int idx = _rnd.Next(topLeft.X + 1, bottomRight.X - 1);
+                        if (GetCellType(idx, bottomRight.Y) != Tile.Wall || GetCellType(idx, bottomRight.Y - 1) != Tile.Floor) continue;
+                        _logger($"Exit At ({idx},{bottomRight.Y})");
+                        return new Vector2(idx, bottomRight.Y);
+                    }
+                    throw new ArgumentOutOfRangeException($"Unable to make a door in the given direction ({d},\n{bounding})");
                 }
+            case Direction.West:
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        int idx = _rnd.Next(topLeft.Y + 1, bottomRight.Y - 1);
+                        _logger($"({topLeft.X},{idx}) Wall: {(char)GetCellType(topLeft.X, idx)} Floor: {GetCellType(topLeft.X + 1, idx)}");
+                        if (GetCellType(topLeft.X, idx) != Tile.Wall || GetCellType(topLeft.X + 1, idx) != Tile.Floor) continue;
+                        _logger($"Exit At ({topLeft.X},{idx})");
+                        return new Vector2(topLeft.X, idx);
+                    }
 
-                throw new ArgumentOutOfRangeException($"Unable to make a door in the given direction ({d},\n{bounding})");
-            }
-            case Direction.East: {
-                for (int y = 0; y < height; y++)
-                {
-                    int idx = _rnd.Next(topLeft.Y + 1, bottomRight.Y - 1);
-                    if(GetCellType(bottomRight.X,idx) != Tile.Wall || GetCellType(bottomRight.X - 1,idx) != Tile.Floor) continue;
-                    _logger($"Exit At ({bottomRight.X},{idx})");
-                    return new Vector2(bottomRight.X,idx);
+                    throw new ArgumentOutOfRangeException($"Unable to make a door in the given direction ({d},\n{bounding})");
                 }
-                throw new ArgumentOutOfRangeException($"Unable to make a door in the given direction ({d},\n{bounding})");
-            }
+            case Direction.East:
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        int idx = _rnd.Next(topLeft.Y + 1, bottomRight.Y - 1);
+                        if (GetCellType(bottomRight.X, idx) != Tile.Wall || GetCellType(bottomRight.X - 1, idx) != Tile.Floor) continue;
+                        _logger($"Exit At ({bottomRight.X},{idx})");
+                        return new Vector2(bottomRight.X, idx);
+                    }
+                    throw new ArgumentOutOfRangeException($"Unable to make a door in the given direction ({d},\n{bounding})");
+                }
         }
 
         throw new InvalidOperationException();
     }
-    private void SetCell(int x, int y, Tile cell){
+    private void SetCell(int x, int y, Tile cell)
+    {
         _dungeonMap[x + _mapWidth * y] = cell;
     }
-    private Tile GetCellType(int x, int y){
-        if(x >= _mapWidth || y >= _mapHeight || x < 0 || y < 0) throw new IndexOutOfRangeException($"({x},{y}) is outside of the map ({_mapWidth},{_mapHeight})");
+    private Tile GetCellType(int x, int y)
+    {
+        if (x >= _mapWidth || y >= _mapHeight || x < 0 || y < 0) throw new IndexOutOfRangeException($"({x},{y}) is outside of the map ({_mapWidth},{_mapHeight})");
         try
         {
             return _dungeonMap[x + _mapWidth * y];
@@ -245,24 +281,27 @@ public class DrunkardWalk {
             throw new IndexOutOfRangeException($"Cords: ({x},{y}) Idx: ({x + _mapWidth * y}) MaxIdx({_mapWidth * _mapHeight}) ");
         }
     }
-    private void SetDoor(Vector2 door, Direction d){
+    private void SetDoor(Vector2 door, Direction d)
+    {
 
-        SetCell(door.X,door.Y,Tile.Door);
+        SetCell(door.X, door.Y, Tile.Door);
 
         int offsetX;
         int offsetY;
         switch (d)
         {
-            case Direction.North: {
-                offsetY = -1;
-                offsetX = 0;
-                break;
-            }
-            case Direction.West: {
-                offsetX = -1;
-                offsetY = 0;
-                break;
-            }
+            case Direction.North:
+                {
+                    offsetY = -1;
+                    offsetX = 0;
+                    break;
+                }
+            case Direction.West:
+                {
+                    offsetX = -1;
+                    offsetY = 0;
+                    break;
+                }
             case Direction.East:
                 offsetX = 1;
                 offsetY = 0;
@@ -277,9 +316,10 @@ public class DrunkardWalk {
                 break;
         }
 
-        SetCell(door.X + offsetX, door.Y + offsetY,Tile.Floor);
+        SetCell(door.X + offsetX, door.Y + offsetY, Tile.Floor);
     }
-    private Room[] GetRoomFromType(int group){
+    private Room[] GetRoomFromType(int group)
+    {
         switch (group)
         {
             case 0:
@@ -292,8 +332,9 @@ public class DrunkardWalk {
                 throw new IndexOutOfRangeException();
         }
     }
-    private Direction RandomDirection(){
-        int dir = _rnd.Next(0,4);
+    private Direction RandomDirection()
+    {
+        int dir = _rnd.Next(0, 4);
         switch (dir)
         {
             case 0:
@@ -309,28 +350,30 @@ public class DrunkardWalk {
         throw new IndexOutOfRangeException();
     }
 
-    private Direction GetExludedRandomDirection(Direction[] ignore){
+    private Direction GetExludedRandomDirection(Direction[] ignore)
+    {
         Direction[] allowed = new[]{
             Direction.East,
             Direction.North,
             Direction.South,
             Direction.West
         };
-        ImmutableArray<Direction> validDirections = allowed.Where(e=> !ignore.Contains(e)).ToImmutableArray();
-        int idx = _rnd.Next(0,validDirections.Length);
+        ImmutableArray<Direction> validDirections = allowed.Where(e => !ignore.Contains(e)).ToImmutableArray();
+        int idx = _rnd.Next(0, validDirections.Length);
         return validDirections[idx];
     }
 
-    private BoundingBox? MakeRoom(int x, int y, Direction d, int roomGroup = 0){
+    private BoundingBox? MakeRoom(int x, int y, Direction d, int roomGroup = 0)
+    {
         Room[] rooms = GetRoomFromType(roomGroup);
-        
+
         int roomIdx = _rnd.Next(rooms.Length);
         Room room = rooms[roomIdx];
         int xWidth = room.GetWidth();
 
-        IEnumerable<Vector2> points = room.GetPoints(x,y,d,_rnd);
-    
-        if(points.Any(s=> s.Y < 0 || s.Y > _mapHeight || s.X < 0 || s.X > _mapWidth || GetCellType(s.X,s.Y) != Tile.Unused)) return null;
+        IEnumerable<Vector2> points = room.GetPoints(x, y, d, _rnd);
+
+        if (points.Any(s => s.Y < 0 || s.Y > _mapHeight || s.X < 0 || s.X > _mapWidth || GetCellType(s.X, s.Y) != Tile.Unused)) return null;
 
         _logger($"Making room:{room.Id}, int y={y}, int x={x}");
 
@@ -338,32 +381,36 @@ public class DrunkardWalk {
 
         int row = 0;
         int col = 0;
-        foreach(var p in points){
-            SetCell(p.X,p.Y,tiles[row + xWidth * col]);
+        foreach (var p in points)
+        {
+            SetCell(p.X, p.Y, tiles[row + xWidth * col]);
             row++;
-            if(row >= xWidth){
+            if (row >= xWidth)
+            {
                 row = 0;
                 col++;
             }
         }
 
-        return new BoundingBox {  
+        return new BoundingBox
+        {
             TopLeft = points.First(),
-            BottomRight= points.Last(),
+            BottomRight = points.Last(),
             Width = xWidth,
             Heigth = room.GetHeight()
         };
     }
-    private BoundingBox? MakeCorridor(int x, int y, int length, Direction direction){
-        int len = _rnd.Next(3,length);
+    private BoundingBox? MakeCorridor(int x, int y, int length, Direction direction)
+    {
+        int len = _rnd.Next(3, length);
 
-        Corridor corridor = new Corridor(len,direction);
+        Corridor corridor = new Corridor(len, direction);
 
         _logger($"{corridor}");
 
-        IEnumerable<Vector2> points = corridor.GetCorridorPoints(x,y,_fakeRnd);
+        IEnumerable<Vector2> points = corridor.GetCorridorPoints(x, y, _fakeRnd);
 
-        if(points.Any(s=> s.Y < 0 || s.Y > _mapHeight || s.X < 0 || s.X > _mapWidth || GetCellType(s.X,s.Y) != Tile.Unused)) return null;
+        if (points.Any(s => s.Y < 0 || s.Y > _mapHeight || s.X < 0 || s.X > _mapWidth || GetCellType(s.X, s.Y) != Tile.Unused)) return null;
 
         _logger($"Making Corridor:{corridor}, int y={y}, int x={x}");
 
@@ -372,16 +419,19 @@ public class DrunkardWalk {
 
         int row = 0;
         int col = 0;
-        foreach(var p in points){
-            SetCell(p.X,p.Y,tiles[row + xWidth * col]);
+        foreach (var p in points)
+        {
+            SetCell(p.X, p.Y, tiles[row + xWidth * col]);
             row++;
-            if(row >= xWidth){
+            if (row >= xWidth)
+            {
                 row = 0;
                 col++;
             }
         }
 
-        return new BoundingBox {  
+        return new BoundingBox
+        {
             TopLeft = points.First(),
             BottomRight = points.Last(),
             Width = xWidth,

@@ -41,7 +41,7 @@ public class Renderer
     public void Write(Tile content, int left, int top)
     {
         Console.SetCursorPosition(left, top);
-        Console.Write(content);
+        Console.Write((char)content);
     }
 
     public void Write(char content, int left, int top)

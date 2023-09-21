@@ -1,25 +1,42 @@
+using System.Collections.Specialized;
 using Dungeon.Geneartion;
+using Dungeon.Utils;
 
 namespace Dungeon.Core;
 
-public class World {
+public class World
+{
+    private bool _debug = false;
+    public int Height = 100;
+    public int Width = 150;
     public string LevelName = "LOADING";
-    public World(){}
-    public void GenearteLevelName(){
-       
+    public Vector2 CurrentStartingPoint = new Vector2(0, 0);
+    private int inRange(int value, int oldMin, int oldMax, int newMin, int newMax)
+    {
+        return (((value - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin;
     }
-    public Tile[] GenearteWorld(){
-        DrunkardWalk generator = new DrunkardWalk(e=>Console.WriteLine(e));
+    public Tuple<int, int> ToLocal(int x, int y)
+    {
+        return Tuple.Create(inRange(x, 0, Width, 0, 50), inRange(y, 0, Height, 0, 19));
+    }
+    public Tuple<int, int> ToWorld(int x, int y)
+    {
+        return Tuple.Create(inRange(x, 0, 50, 0, Width), inRange(y, 0, 19, 0, Height));
+    }
+    public void GenearteLevelName(bool debug = false)
+    {
+        _debug = debug;
+    }
+    public Tile[] GenearteWorld()
+    {
+        DrunkardWalk generator = new DrunkardWalk(e =>
+        {
+            if (_debug) Console.WriteLine(e);
+        });
 
-        generator.CreateDungeon(150,100,6);
-
-        Console.ReadKey();
+        CurrentStartingPoint = generator.CreateDungeon(Width, Height, 6);
 
         Tile[] map = generator.GetMap();
-
-        generator.Print();
-
-        Console.ReadKey();
 
         return map;
     }
