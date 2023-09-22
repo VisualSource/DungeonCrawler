@@ -31,8 +31,17 @@ public class GameScreen : IScreen
     }
     private void GenerateLevel()
     {
-        DrunkardWalk generator = new DrunkardWalk(e => { });
-        _level = generator.CreateDungeon(_mapWidth, _mapHeight, 6, _entranceLadder);
+        if (_entranceLadder is not null)
+        {
+            _level = Level.LoadLevel("../content/", _entranceLadder.Item1);
+            _entranceLadder = null;
+        }
+
+        if (_level is null)
+        {
+            DrunkardWalk generator = new DrunkardWalk(e => { });
+            _level = generator.CreateDungeon(_mapWidth, _mapHeight, 6, _entranceLadder);
+        }
 
         _worldOffset.X = _level.StartPoint.X - _screenWidthHalf;
         _worldOffset.Y = _level.StartPoint.Y - _screenHeightHalf;
