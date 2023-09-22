@@ -6,5 +6,6 @@ public enum Screen
     Game = 1,
     Settings = 2,
     Pause = 3,
-    Inventory = 4
+    Error = 4,
+    Inventory = 5
 }

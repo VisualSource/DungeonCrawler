@@ -3,9 +3,9 @@ public enum Tile
 {
     Unused = ' ',
     Wall = '#',
-    Start = 'S',
     Floor = '.',
     Corridor = '▊',
+    Ladder = '+',
     Door = 'D',
     Chest = 'C',
     NPC = 'N',

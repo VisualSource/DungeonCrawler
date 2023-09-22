@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Dungeon.Utils;
 namespace Dungeon.Geneartion;
@@ -18,15 +17,30 @@ public class DrunkardWalk
         public int Width { get; init; }
         public int Heigth { get; init; }
 
+        public Vector2 GetXRange()
+        {
+            return new Vector2(TopLeft.X, BottomRight.X);
+        }
+
+        public Vector2 GetYRange()
+        {
+            return new Vector2(TopLeft.Y, BottomRight.Y);
+        }
+
         public override string ToString()
         {
             return $"<BoundingBox Width={Width} Height={Heigth} TopLeft={TopLeft} BottomRight={BottomRight}/>";
         }
     }
     private const int SpecialRoomChance = 10;
+    private const int ChestSpawnChance = 35;
+    private const int LadderSpawnChance = 10;
     private const int ChanceRoom = 70;
     public int MapMaxWidth = 200;
     public int MapMaxHeight = 200;
+
+    private Vector2 _startingPoint = new Vector2(0, 0);
+    private List<Tuple<string, Vector2>> _ladders = new List<Tuple<string, Vector2>>();
     private int _mapWidth;
     private int _mapHeight;
     private int _features;
@@ -58,7 +72,12 @@ public class DrunkardWalk
     {
         return _dungeonMap;
     }
-    public Vector2 CreateDungeon(int inX, int inY, int inFeatures)
+
+    private string GenearteName()
+    {
+        return "No Name";
+    }
+    public Level CreateDungeon(int inX, int inY, int inFeatures, Tuple<string, Vector2>? entranceLadder)
     {
         if (inFeatures < 1 || inX < 10 || inY < 10) throw new ArgumentOutOfRangeException();
 
@@ -80,6 +99,7 @@ public class DrunkardWalk
             }
         }
 
+        string id = entranceLadder is null ? Guid.NewGuid().ToString() : entranceLadder.Item1;
         Direction currentDirection = RandomDirection();
         Vector2? currentExit = null;
         BoundingBox? currentFeature;
@@ -90,9 +110,15 @@ public class DrunkardWalk
         _logger($"Current Direction: {currentDirection} {currentFeature}");
         if (currentFeature is null) throw new Exception("Failed to init map");
 
-        Vector2 startingPoint = GetStartingPoint(currentFeature.Value);
+        _startingPoint = GetStartingPoint(currentFeature.Value);
 
-        SetCell(startingPoint.X, startingPoint.Y, Tile.Start);
+        if (entranceLadder is not null)
+        {
+            SetCell(_startingPoint.X, _startingPoint.Y, Tile.Ladder);
+            _ladders.Add(Tuple.Create(entranceLadder.Item1, new Vector2(_startingPoint.X, _startingPoint.Y)));
+        }
+
+        AddChest(currentFeature.Value, _startingPoint);
 
         currentFeatures++;
         currentExit = GetRoomExit(currentFeature.Value, currentDirection);
@@ -164,13 +190,13 @@ public class DrunkardWalk
             }
         }
 
-        return startingPoint;
+        return new Level(id, GenearteName(), _dungeonMap, _ladders.ToArray(), _startingPoint);
     }
     private Vector2 GetStartingPoint(BoundingBox box)
     {
 
         int x = _rnd.Next(box.TopLeft.X + 1, box.BottomRight.X - 1);
-        int y = _rnd.Next(box.TopLeft.Y + 1, box.BottomRight.Y + 1);
+        int y = _rnd.Next(box.TopLeft.Y + 1, box.BottomRight.Y - 1);
 
         return new Vector2(x, y);
     }
@@ -377,13 +403,17 @@ public class DrunkardWalk
             }
         }
 
-        return new BoundingBox
+        BoundingBox box = new BoundingBox
         {
             TopLeft = points.First(),
             BottomRight = points.Last(),
             Width = xWidth,
             Heigth = room.GetHeight()
         };
+
+        AddDetails(box, roomGroup);
+
+        return box;
     }
     private BoundingBox? MakeCorridor(int x, int y, int length, Direction direction)
     {
@@ -422,5 +452,77 @@ public class DrunkardWalk
             Width = xWidth,
             Heigth = corridor.GetHeight()
         };
+    }
+
+    private void AddChest(BoundingBox range, Vector2? ignore)
+    {
+        int chance = _rnd.Next(100);
+
+        if (chance <= ChestSpawnChance) return;
+
+        Vector2 top = range.TopLeft;
+        Vector2 bottom = range.BottomRight;
+
+        for (int i = 0; i < 5; i++)
+        {
+            int x = _rnd.Next(top.X + 1, bottom.X - 1);
+            int y = _rnd.Next(top.Y + 1, bottom.Y - 1);
+
+            if (ignore is not null && ignore.X == x && ignore.Y == y) continue;
+
+            if (GetCellType(x, y) == Tile.Floor)
+            {
+                SetCell(x, y, Tile.Chest);
+                break;
+            }
+        }
+    }
+
+    private void AddLadder(BoundingBox range)
+    {
+        int chance = _rnd.Next(100);
+
+        if (chance <= LadderSpawnChance) return;
+
+        Vector2 top = range.TopLeft;
+        Vector2 bottom = range.BottomRight;
+
+        for (int i = 0; i < 5; i++)
+        {
+            int x = _rnd.Next(top.X + 1, bottom.X - 1);
+            int y = _rnd.Next(top.Y + 1, bottom.Y - 1);
+
+            if (GetCellType(x, y) == Tile.Floor)
+            {
+                SetCell(x, y, Tile.Ladder);
+
+                string id = Guid.NewGuid().ToString();
+                _ladders.Add(Tuple.Create(id, new Vector2(x, y)));
+                break;
+            }
+        }
+    }
+
+    private void AddDetails(BoundingBox range, int type)
+    {
+        switch (type)
+        {
+            case 0:
+                {
+                    AddChest(range, null);
+                    AddLadder(range);
+                }
+                break;
+            case 1:
+                {
+                    AddChest(range, null);
+                    AddLadder(range);
+                }
+                break;
+            case 2:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
     }
 }

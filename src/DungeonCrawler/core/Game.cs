@@ -15,7 +15,17 @@ public class Game
             new GameScreen(this),
             new SettingsScreen(this),
             new PauseScreen(this),
+            new ErrorScreen(this)
         };
+    }
+
+    public void SetError(string reason)
+    {
+        var screen = (ErrorScreen)_screens[(int)Screen.Screen.Error];
+
+        screen.SetErrorMessage(reason);
+
+        SetScreen(Screen.Screen.Error);
     }
     public void SetScreen(Screen.Screen screen)
     {
