@@ -58,23 +58,6 @@ public class DrunkardWalk
     {
         return _dungeonMap;
     }
-
-    public void Print()
-    {
-        int row = 0;
-        foreach (var item in _dungeonMap)
-        {
-
-            Console.Write((char)item);
-            row++;
-
-            if (row >= _mapWidth)
-            {
-                Console.Write("\n");
-                row = 0;
-            }
-        }
-    }
     public Vector2 CreateDungeon(int inX, int inY, int inFeatures)
     {
         if (inFeatures < 1 || inX < 10 || inY < 10) throw new ArgumentOutOfRangeException();
@@ -108,6 +91,8 @@ public class DrunkardWalk
         if (currentFeature is null) throw new Exception("Failed to init map");
 
         Vector2 startingPoint = GetStartingPoint(currentFeature.Value);
+
+        SetCell(startingPoint.X, startingPoint.Y, Tile.Start);
 
         currentFeatures++;
         currentExit = GetRoomExit(currentFeature.Value, currentDirection);

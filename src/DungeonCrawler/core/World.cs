@@ -36,7 +36,27 @@ public class World
 
         CurrentStartingPoint = generator.CreateDungeon(Width, Height, 6);
 
+        Console.Clear();
+        Console.WriteLine(CurrentStartingPoint);
         Tile[] map = generator.GetMap();
+
+        /*for (int y = 0; y < Height; y++)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                if (y == 0 || y == (Height - 1) || x == 0 || x == Width - 1)
+                {
+                    Console.Write("=");
+                    continue;
+                }
+
+                Console.Write((char)map[x + Width * y]);
+            }
+
+            Console.Write("\n");
+        }
+
+        Console.ReadKey();*/
 
         return map;
     }
