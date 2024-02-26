@@ -2,15 +2,17 @@ using Dungeon.Internal;
 
 namespace Dungeon.Screen;
 
-class Game : ScreenInterface
+public class Game : ScreenInterface
 {
+    private List<List<string>> buffer = new List<List<string>>();
+
     public void Input(ConsoleKeyInfo input)
     {
-        throw new NotImplementedException();
+
     }
 
-    public void Update()
+    public void Update(Renderer renderer)
     {
-        throw new NotImplementedException();
+
     }
 }

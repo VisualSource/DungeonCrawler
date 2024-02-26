@@ -1,7 +1,7 @@
 ﻿using Dungeon.Internal;
 using Dungeon.Screen;
 
-Renderer renderer = new Renderer("Dungeon Craller");
+
 ScreenManager manager = new ScreenManager(new List<ScreenInterface>() { new Game() });
 
 char GetBorderChar(int x, int y)
@@ -42,15 +42,7 @@ char GetBorderChar(int x, int y)
 
     return ' ';
 }
-Console.Clear();
-for (int y = 0; y < renderer.ScreenHeight; y++)
-{
-    for (int x = 0; x < renderer.ScreenWidth; x++)
-    {
-        char item = GetBorderChar(x, y);
-        renderer.WriteAt(x, y, item);
-    }
-}
+
 manager.Run();
 
 // Game loop

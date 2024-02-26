@@ -1,7 +1,8 @@
 namespace Dungeon.Internal;
 
-class ScreenManager
+public class ScreenManager
 {
+    Renderer renderer = new Renderer("Dungeon Craller");
     List<ScreenInterface> screenInterfaces = new List<ScreenInterface>();
     ScreenInterface currentScreen;
     int screen = 0;
@@ -17,12 +18,13 @@ class ScreenManager
     {
         while (true)
         {
+            Console.Clear();
             ConsoleKeyInfo input = Console.ReadKey(true);
             if (Console.KeyAvailable)
             {
                 currentScreen.Input(input);
             }
-            currentScreen.Update();
+            currentScreen.Update(renderer);
         }
     }
 }
